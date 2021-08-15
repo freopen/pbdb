@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "prdb.proto";
+
+message Type {
+  option (prdb.type) = true;
+
+  string id = 1 [ (prdb.id) = true ];
+}

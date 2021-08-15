@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+package prdb;
+
+extend google.protobuf.MessageOptions { optional bool type = 50000; }
+
+extend google.protobuf.FieldOptions { optional bool id = 50000; }
