@@ -3,9 +3,13 @@ name = "prdb"
 version = "0.1.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-
 [workspace]
 members = ["prdb-build"]
+
+[dependencies]
+prost = "0.8.0"
+rocksdb = "0.17.0"
+thiserror = "1.0.25"
+
+[dev-dependencies]
+tempfile = "3.2.0"
