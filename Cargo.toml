@@ -2,6 +2,13 @@
 name = "pbdb"
 version = "0.1.0"
 edition = "2018"
+license = "Apache-2.0"
+description = "DBMS over RocksDB with schema as Protobuf description with custom annotations"
+homepage = "https://github.com/freopen/pbdb"
+repository = "https://github.com/freopen/pbdb"
+exclude = [
+  ".vscode"
+]
 
 [workspace]
 members = ["pbdb-macros", "integration-tests"]
