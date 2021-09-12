@@ -1,0 +1,15 @@
+[package]
+name = "integration-tests"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+pbdb = { version = "0.1.0", path = ".." }
+prost = "0.8.0"
+
+[build-dependencies]
+prost-build = "0.8.0"
+
+[dev-dependencies]
+tempfile = "3.2.0"

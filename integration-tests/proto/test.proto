@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "pbdb.proto";
+
+package tests;
+
+message BasicMessage {
+  string id = 1 [ (pbdb.id) = true ];
+  uint32 value = 2;
+}

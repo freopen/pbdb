@@ -1,8 +1,8 @@
 {
   "protoc": {
     "options": [
-      "--proto_path=${workspaceRoot}/prdb-build/proto",
-      "--proto_path=${workspaceRoot}/prdb-build",
+      "--proto_path=${workspaceRoot}/pbdb-build/proto",
+      "--proto_path=${workspaceRoot}/pbdb-build",
       "--descriptor_set_out=/tmp/descriptor_set.bin"
     ],
   }

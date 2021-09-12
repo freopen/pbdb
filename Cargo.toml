@@ -1,15 +1,16 @@
 [package]
-name = "prdb"
+name = "pbdb"
 version = "0.1.0"
 edition = "2018"
 
 [workspace]
-members = ["prdb-build"]
+members = ["pbdb-macros", "integration-tests"]
 
 [dependencies]
+pbdb-macros = { version = "0.1.0", path = "pbdb-macros" }
 prost = "0.8.0"
 rocksdb = "0.17.0"
-thiserror = "1.0.25"
+thiserror = "1.0.29"
 
 [dev-dependencies]
 tempfile = "3.2.0"

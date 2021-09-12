@@ -1,3 +1,4 @@
+pub use pbdb_macros::pbdb_impls;
 use std::{
   marker::PhantomData,
   path::{Path, PathBuf},
