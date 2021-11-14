@@ -8,3 +8,8 @@ message BasicMessage {
   string id = 1 [ (pbdb.id) = true ];
   uint32 value = 2;
 }
+
+message SingleRecord {
+  option (pbdb.single_record) = true;
+  uint32 value = 1;
+}

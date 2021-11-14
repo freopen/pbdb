@@ -58,8 +58,8 @@ message FileDescriptorProto {
 // Describes a message type.
 message DescriptorProto {
   optional string name = 1;
-
   repeated FieldDescriptorProto field = 2;
+  optional MessageOptions options = 7;
 }
 
 // Describes a field within a message.
@@ -114,4 +114,6 @@ message FieldDescriptorProto {
   optional FieldOptions options = 8;
 }
 
-message FieldOptions { optional bool pbdb_id = 50000; }
+message MessageOptions { optional bool single_record = 50000; }
+
+message FieldOptions { optional bool id = 50000; }

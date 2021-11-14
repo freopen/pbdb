@@ -35,7 +35,31 @@ pub trait Collection: prost::Message + Default {
   }
 }
 
-pub struct DbGuard{}
+pub trait SingleRecord: prost::Message + Default {
+  const RECORD_ID: &'static str;
+
+  fn get() -> Self {
+    let read = DB.read();
+    let db = read.as_ref().expect("Pbdb database not initialized");
+    db.get_pinned_cf(db.cf_handle("__SingleRecord").unwrap(), Self::RECORD_ID)
+      .unwrap()
+      .map(|buf| Self::decode(&*buf).unwrap())
+      .unwrap_or_default()
+  }
+
+  fn put(&self) {
+    let read = DB.read();
+    let db = read.as_ref().expect("Pbdb database not initialized");
+    db.put_cf(
+      db.cf_handle("__SingleRecord").unwrap(),
+      Self::RECORD_ID,
+      self.encode_to_vec(),
+    )
+    .unwrap()
+  }
+}
+
+pub struct DbGuard {}
 
 impl Drop for DbGuard {
   fn drop(&mut self) {

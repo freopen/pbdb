@@ -34,12 +34,20 @@ fn process_fds(fds: &descriptor::FileDescriptorSet) -> TokenStream {
     .filter_map(|dp| process_dp(dp))
     .unzip();
   quote! {
-    pub fn open_db(path: &std::path::Path) -> Result<::pbdb::DbGuard, pbdb::private::rocksdb::Error> {
+    pub fn open_db(
+      path: &std::path::Path
+    ) -> Result<::pbdb::DbGuard, pbdb::private::rocksdb::Error> {
       use ::pbdb::private::{DB, rocksdb};
       let mut opts = rocksdb::Options::default();
       opts.create_if_missing(true);
       opts.create_missing_column_families(true);
       let mut cfs = vec![];
+      cfs.push(
+        rocksdb::ColumnFamilyDescriptor::new(
+          "__SingleRecord",
+          rocksdb::Options::default()
+        )
+      );
       #(#options)*
       let db = rocksdb::DB::open_cf_descriptors(&opts, path, cfs)?;
       let mut write = DB.write();
@@ -51,6 +59,10 @@ fn process_fds(fds: &descriptor::FileDescriptorSet) -> TokenStream {
 }
 
 fn process_dp(dp: &descriptor::DescriptorProto) -> Option<(TokenStream, TokenStream)> {
+  generate_collection(dp).or_else(|| generate_single_record(dp))
+}
+
+fn generate_collection(dp: &descriptor::DescriptorProto) -> Option<(TokenStream, TokenStream)> {
   let id_fields: Vec<_> = dp
     .field
     .iter()
@@ -58,7 +70,7 @@ fn process_dp(dp: &descriptor::DescriptorProto) -> Option<(TokenStream, TokenStr
       field
         .options
         .as_ref()
-        .map_or(false, |options| options.pbdb_id == Some(true))
+        .map_or(false, |options| options.id == Some(true))
     })
     .collect();
   if id_fields.len() > 1 {
@@ -91,6 +103,26 @@ fn process_dp(dp: &descriptor::DescriptorProto) -> Option<(TokenStream, TokenStr
           )
         );
       },
+    ))
+  } else {
+    None
+  }
+}
+
+fn generate_single_record(dp: &descriptor::DescriptorProto) -> Option<(TokenStream, TokenStream)> {
+  if dp
+    .options
+    .as_ref()
+    .map_or(false, |options| options.single_record == Some(true))
+  {
+    let message_name = format_ident!("{}", dp.name());
+    Some((
+      quote! {
+        impl ::pbdb::SingleRecord for #message_name {
+          const RECORD_ID: &'static str = stringify!(#message_name);
+        }
+      },
+      quote! {},
     ))
   } else {
     None

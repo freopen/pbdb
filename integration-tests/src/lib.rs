@@ -1,2 +1,2 @@
 #[cfg(test)]
-mod basic_message;
+mod basic_tests;
