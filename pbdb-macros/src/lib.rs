@@ -26,16 +26,31 @@ fn read_descriptor(path: &Path) -> descriptor::FileDescriptorSet {
 }
 
 fn process_fds(fds: &descriptor::FileDescriptorSet) -> TokenStream {
-  fds
+  let (globals, options): (Vec<_>, Vec<_>) = fds
     .file
     .iter()
     .map(|file| &file.message_type)
     .flatten()
-    .map(|dp| process_dp(dp))
-    .collect()
+    .filter_map(|dp| process_dp(dp))
+    .unzip();
+  quote! {
+    pub fn open_db(path: &std::path::Path) -> Result<::pbdb::DbGuard, pbdb::private::rocksdb::Error> {
+      use ::pbdb::private::{DB, rocksdb};
+      let mut opts = rocksdb::Options::default();
+      opts.create_if_missing(true);
+      opts.create_missing_column_families(true);
+      let mut cfs = vec![];
+      #(#options)*
+      let db = rocksdb::DB::open_cf_descriptors(&opts, path, cfs)?;
+      let mut write = DB.write();
+      *write = Some(db);
+      Ok(::pbdb::DbGuard{})
+    }
+    #(#globals)*
+  }
 }
 
-fn process_dp(dp: &descriptor::DescriptorProto) -> TokenStream {
+fn process_dp(dp: &descriptor::DescriptorProto) -> Option<(TokenStream, TokenStream)> {
   let id_fields: Vec<_> = dp
     .field
     .iter()
@@ -58,22 +73,26 @@ fn process_dp(dp: &descriptor::DescriptorProto) -> TokenStream {
     }
     let message_name = format_ident!("{}", dp.name());
     let id_field_name = format_ident!("{}", id_field.name());
-    quote! {
-      impl #message_name {
-        pub fn id(id: &str) -> ::pbdb::Id<Self> {
-          ::pbdb::Id::new(id.as_bytes().to_owned())
-        }
-      }
+    Some((
+      quote! {
+        impl ::pbdb::Collection for #message_name {
+          const CF_NAME: &'static str = stringify!(#message_name);
 
-      impl ::pbdb::Collection for #message_name {
-        const CF_NAME: &'static str = stringify!(#message_name);
-
-        fn id(&self) -> ::pbdb::Id<Self> {
-          ::pbdb::Id::new(self.#id_field_name.as_bytes().to_owned())
+          fn get_id(&self) -> &str {
+            self.#id_field_name.as_str()
+          }
         }
-      }
-    }
+      },
+      quote! {
+        cfs.push(
+          rocksdb::ColumnFamilyDescriptor::new(
+            stringify!(#message_name),
+            rocksdb::Options::default()
+          )
+        );
+      },
+    ))
   } else {
-    TokenStream::new()
+    None
   }
 }

@@ -1,23 +1,22 @@
 [package]
 name = "pbdb"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 description = "DBMS over RocksDB with schema as Protobuf description with custom annotations"
 homepage = "https://github.com/freopen/pbdb"
 repository = "https://github.com/freopen/pbdb"
-exclude = [
-  ".vscode"
-]
+exclude = [".vscode"]
 
 [workspace]
 members = ["pbdb-macros", "integration-tests"]
 
 [dependencies]
+parking_lot = "0.11.2"
 pbdb-macros = { version = "0.1.0", path = "pbdb-macros" }
-prost = "0.8.0"
+prost = "0.9.0"
 rocksdb = "0.17.0"
-thiserror = "1.0.29"
+thiserror = "1.0.30"
 
 [dev-dependencies]
 tempfile = "3.2.0"

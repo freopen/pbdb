@@ -6,6 +6,6 @@ fn main() -> Result<()> {
       PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR environment variable not set"))
         .join("file_descriptor_set.bin"),
     )
-    .compile_protos(&["proto/test.proto"], &["proto", "../proto"])?;
+    .compile_protos(&["proto/tests.proto"], &["proto", "../proto"])?;
   Ok(())
 }
