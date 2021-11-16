@@ -5,13 +5,17 @@ pub use pbdb_macros::pbdb_impls;
 
 pub trait Collection: prost::Message + Default {
   const CF_NAME: &'static str;
+  type Id;
+  type SerializedId: AsRef<[u8]>;
 
-  fn get_id(&self) -> &str;
+  fn get_id(&self) -> Self::SerializedId;
 
-  fn get(id: &str) -> Option<Self> {
+  fn build_id(id: &Self::Id) -> Self::SerializedId;
+
+  fn get(id: &Self::Id) -> Option<Self> {
     let read = DB.read();
     let db = read.as_ref().expect("Pbdb database not initialized");
-    db.get_pinned_cf(db.cf_handle(Self::CF_NAME).unwrap(), id)
+    db.get_pinned_cf(db.cf_handle(Self::CF_NAME).unwrap(), Self::build_id(id))
       .unwrap()
       .map(|buf| Self::decode(&*buf).unwrap())
   }
@@ -27,10 +31,10 @@ pub trait Collection: prost::Message + Default {
     .unwrap()
   }
 
-  fn delete(id: &str) {
+  fn delete(id: &Self::Id) {
     let read = DB.read();
     let db = read.as_ref().expect("Pbdb database not initialized");
-    db.delete_cf(db.cf_handle(Self::CF_NAME).unwrap(), id)
+    db.delete_cf(db.cf_handle(Self::CF_NAME).unwrap(), Self::build_id(id))
       .unwrap()
   }
 }

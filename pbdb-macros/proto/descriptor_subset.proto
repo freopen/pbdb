@@ -116,4 +116,10 @@ message FieldDescriptorProto {
 
 message MessageOptions { optional bool single_record = 50000; }
 
-message FieldOptions { optional bool id = 50000; }
+message FieldOptions {
+  enum IdTypes {
+    NOT_USED = 0;
+    DEFAULT = 1;
+  }
+  optional IdTypes id = 50000;
+}

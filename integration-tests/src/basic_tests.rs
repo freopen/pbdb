@@ -9,30 +9,29 @@ mod proto {
 #[test]
 fn basic_message() {
   let dir = tempdir().expect("Failed to create temp dir");
+  let id = String::from("test");
   let msg = proto::BasicMessage {
-    id: "test".to_string(),
+    id: id.clone(),
     value: 2,
   };
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(None, proto::BasicMessage::get("test"));
+    assert_eq!(None, proto::BasicMessage::get(&id));
     msg.put();
-    assert_eq!(Some(msg.clone()), proto::BasicMessage::get("test"));
+    assert_eq!(Some(msg.clone()), proto::BasicMessage::get(&id));
   }
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(Some(msg), proto::BasicMessage::get("test"));
-    proto::BasicMessage::delete("test");
-    assert_eq!(None, proto::BasicMessage::get("test"));
+    assert_eq!(Some(msg), proto::BasicMessage::get(&id));
+    proto::BasicMessage::delete(&id);
+    assert_eq!(None, proto::BasicMessage::get(&id));
   }
 }
 
 #[test]
 fn single_record() {
   let dir = tempdir().expect("Failed to create temp dir");
-  let msg = proto::SingleRecord {
-    value: 2,
-  };
+  let msg = proto::SingleRecord { value: 2 };
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
     assert_eq!(proto::SingleRecord::default(), proto::SingleRecord::get());

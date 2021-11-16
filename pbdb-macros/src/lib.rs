@@ -51,6 +51,7 @@ fn process_fds(fds: &descriptor::FileDescriptorSet) -> TokenStream {
       #(#options)*
       let db = rocksdb::DB::open_cf_descriptors(&opts, path, cfs)?;
       let mut write = DB.write();
+      assert!((*write).is_none(), "Trying to open DB without closing previous one.");
       *write = Some(db);
       Ok(::pbdb::DbGuard{})
     }
@@ -67,10 +68,9 @@ fn generate_collection(dp: &descriptor::DescriptorProto) -> Option<(TokenStream,
     .field
     .iter()
     .filter(|field| {
-      field
-        .options
-        .as_ref()
-        .map_or(false, |options| options.id == Some(true))
+      field.options.as_ref().map_or(false, |options| {
+        options.id == Some(descriptor::field_options::IdTypes::Default as i32)
+      })
     })
     .collect();
   if id_fields.len() > 1 {
@@ -89,9 +89,15 @@ fn generate_collection(dp: &descriptor::DescriptorProto) -> Option<(TokenStream,
       quote! {
         impl ::pbdb::Collection for #message_name {
           const CF_NAME: &'static str = stringify!(#message_name);
+          type Id = String;
+          type SerializedId = Vec<u8>;
 
-          fn get_id(&self) -> &str {
-            self.#id_field_name.as_str()
+          fn get_id(&self) -> Self::SerializedId {
+            self.#id_field_name.as_bytes().to_vec()
+          }
+
+          fn build_id(id: &Self::Id) -> Self::SerializedId {
+            id.as_bytes().to_vec()
           }
         }
       },
