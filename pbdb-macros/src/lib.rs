@@ -69,7 +69,7 @@ fn generate_collection(dp: &descriptor::DescriptorProto) -> Option<(TokenStream,
     .iter()
     .filter(|field| {
       field.options.as_ref().map_or(false, |options| {
-        options.id == Some(descriptor::field_options::IdTypes::Default as i32)
+        options.id() != descriptor::field_options::IdType::NotUsed
       })
     })
     .collect();
@@ -85,6 +85,16 @@ fn generate_collection(dp: &descriptor::DescriptorProto) -> Option<(TokenStream,
     }
     let message_name = format_ident!("{}", dp.name());
     let id_field_name = format_ident!("{}", id_field.name());
+    let conversion =
+      if id_field.options.as_ref().unwrap().id() == descriptor::field_options::IdType::Default {
+        quote! {
+          as_bytes().to_vec()
+        }
+      } else {
+        quote! {
+          to_lowercase().as_bytes().to_vec()
+        }
+      };
     Some((
       quote! {
         impl ::pbdb::Collection for #message_name {
@@ -93,11 +103,11 @@ fn generate_collection(dp: &descriptor::DescriptorProto) -> Option<(TokenStream,
           type SerializedId = Vec<u8>;
 
           fn get_id(&self) -> Self::SerializedId {
-            self.#id_field_name.as_bytes().to_vec()
+            self.#id_field_name.#conversion
           }
 
           fn build_id(id: &Self::Id) -> Self::SerializedId {
-            id.as_bytes().to_vec()
+            id.#conversion
           }
         }
       },

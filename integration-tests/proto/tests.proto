@@ -13,3 +13,5 @@ message SingleRecord {
   option (pbdb.single_record) = true;
   uint32 value = 1;
 }
+
+message CaseInsensitive { string id = 1 [ (pbdb.id) = CASE_INSENSITIVE ]; }

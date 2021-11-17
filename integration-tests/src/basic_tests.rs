@@ -43,3 +43,31 @@ fn single_record() {
     assert_eq!(msg, proto::SingleRecord::get());
   }
 }
+
+#[test]
+fn case_insensitive() {
+  let dir = tempdir().expect("Failed to create temp dir");
+  let msg = proto::CaseInsensitive {
+    id: String::from("test"),
+  };
+  {
+    let _db_guard = proto::open_db(dir.path()).unwrap();
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("test")));
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("Test")));
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("TEST")));
+    msg.put();
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("test")));
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("Test")));
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("TEST")));
+  }
+  {
+    let _db_guard = proto::open_db(dir.path()).unwrap();
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("test")));
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("Test")));
+    assert_eq!(Some(msg), proto::CaseInsensitive::get(&String::from("TEST")));
+    proto::CaseInsensitive::delete(&String::from("TEST"));
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("test")));
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("Test")));
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("TEST")));
+  }
+}

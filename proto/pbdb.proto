@@ -6,11 +6,10 @@ package pbdb;
 
 extend google.protobuf.MessageOptions { optional bool single_record = 50000; }
 
-enum IdTypes {
+enum IdType {
   NOT_USED = 0;
   DEFAULT = 1;
+  CASE_INSENSITIVE = 2;
 }
 
-extend google.protobuf.FieldOptions {
-  optional IdTypes id = 50000;
-}
+extend google.protobuf.FieldOptions { optional IdType id = 50000; }
