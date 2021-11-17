@@ -1,4 +1,6 @@
 pub mod private;
+use std::io::Write;
+
 use private::DB;
 
 pub use pbdb_macros::pbdb_impls;
@@ -69,4 +71,11 @@ impl Drop for DbGuard {
   fn drop(&mut self) {
     *DB.write() = None;
   }
+}
+
+pub fn create_pbdb_proto(path: &std::path::Path) {
+  std::fs::File::create(path.join("pbdb.proto"))
+    .expect("Failed to create pbdb.proto")
+    .write_all(include_bytes!("pbdb.proto"))
+    .expect("Failed to write pbdb.proto");
 }
