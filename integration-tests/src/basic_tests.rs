@@ -16,15 +16,15 @@ fn basic_message() {
   };
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(None, proto::BasicMessage::get(&id));
-    msg.put();
-    assert_eq!(Some(msg.clone()), proto::BasicMessage::get(&id));
+    assert_eq!(None, proto::BasicMessage::get(&id).unwrap());
+    msg.put().unwrap();
+    assert_eq!(Some(msg.clone()), proto::BasicMessage::get(&id).unwrap());
   }
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(Some(msg), proto::BasicMessage::get(&id));
-    proto::BasicMessage::delete(&id);
-    assert_eq!(None, proto::BasicMessage::get(&id));
+    assert_eq!(Some(msg), proto::BasicMessage::get(&id).unwrap());
+    proto::BasicMessage::delete(&id).unwrap();
+    assert_eq!(None, proto::BasicMessage::get(&id).unwrap());
   }
 }
 
@@ -34,13 +34,13 @@ fn single_record() {
   let msg = proto::SingleRecord { value: 2 };
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(proto::SingleRecord::default(), proto::SingleRecord::get());
-    msg.put();
-    assert_eq!(msg, proto::SingleRecord::get());
+    assert_eq!(proto::SingleRecord::default(), proto::SingleRecord::get().unwrap());
+    msg.put().unwrap();
+    assert_eq!(msg, proto::SingleRecord::get().unwrap());
   }
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(msg, proto::SingleRecord::get());
+    assert_eq!(msg, proto::SingleRecord::get().unwrap());
   }
 }
 
@@ -52,22 +52,22 @@ fn case_insensitive() {
   };
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(None, proto::CaseInsensitive::get(&String::from("test")));
-    assert_eq!(None, proto::CaseInsensitive::get(&String::from("Test")));
-    assert_eq!(None, proto::CaseInsensitive::get(&String::from("TEST")));
-    msg.put();
-    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("test")));
-    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("Test")));
-    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("TEST")));
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("test")).unwrap());
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("Test")).unwrap());
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("TEST")).unwrap());
+    msg.put().unwrap();
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("test")).unwrap());
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("Test")).unwrap());
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("TEST")).unwrap());
   }
   {
     let _db_guard = proto::open_db(dir.path()).unwrap();
-    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("test")));
-    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("Test")));
-    assert_eq!(Some(msg), proto::CaseInsensitive::get(&String::from("TEST")));
-    proto::CaseInsensitive::delete(&String::from("TEST"));
-    assert_eq!(None, proto::CaseInsensitive::get(&String::from("test")));
-    assert_eq!(None, proto::CaseInsensitive::get(&String::from("Test")));
-    assert_eq!(None, proto::CaseInsensitive::get(&String::from("TEST")));
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("test")).unwrap());
+    assert_eq!(Some(msg.clone()), proto::CaseInsensitive::get(&String::from("Test")).unwrap());
+    assert_eq!(Some(msg), proto::CaseInsensitive::get(&String::from("TEST")).unwrap());
+    proto::CaseInsensitive::delete(&String::from("TEST")).unwrap();
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("test")).unwrap());
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("Test")).unwrap());
+    assert_eq!(None, proto::CaseInsensitive::get(&String::from("TEST")).unwrap());
   }
 }

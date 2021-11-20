@@ -1,9 +1,22 @@
-pub mod private;
 use std::io::Write;
+use thiserror::Error;
 
 use private::DB;
 
+pub mod private;
 pub use pbdb_macros::pbdb_impls;
+
+#[derive(Error, Debug)]
+pub enum Error {
+  #[error("{0}")]
+  PbdbError(String),
+  #[error("RocksDB error: {0}")]
+  RocksdbError(#[from] rocksdb::Error),
+  #[error("Protobuf decoding error: {0}")]
+  ProstDecodeError(#[from] prost::DecodeError),
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub trait Collection: prost::Message + Default {
   const CF_NAME: &'static str;
@@ -14,54 +27,75 @@ pub trait Collection: prost::Message + Default {
 
   fn build_id(id: &Self::Id) -> Self::SerializedId;
 
-  fn get(id: &Self::Id) -> Option<Self> {
-    let read = DB.read();
-    let db = read.as_ref().expect("Pbdb database not initialized");
-    db.get_pinned_cf(db.cf_handle(Self::CF_NAME).unwrap(), Self::build_id(id))
-      .unwrap()
-      .map(|buf| Self::decode(&*buf).unwrap())
+  fn open_cf<'a>(
+    read: &'a parking_lot::RwLockReadGuard<Option<rocksdb::DB>>,
+  ) -> Result<(&'a rocksdb::DB, &'a rocksdb::ColumnFamily)> {
+    let db = read
+      .as_ref()
+      .ok_or_else(|| Error::PbdbError("Pbdb database not initialized".to_string()))?;
+    let cf = db.cf_handle(Self::CF_NAME).ok_or_else(|| {
+      Error::PbdbError(format!(
+        "(INTERNAL ERROR) Column family {} not found",
+        Self::CF_NAME
+      ))
+    })?;
+    Ok((db, cf))
   }
 
-  fn put(&self) {
+  fn get(id: &Self::Id) -> Result<Option<Self>> {
     let read = DB.read();
-    let db = read.as_ref().expect("Pbdb database not initialized");
-    db.put_cf(
-      db.cf_handle(Self::CF_NAME).unwrap(),
-      Self::get_id(self),
-      self.encode_to_vec(),
-    )
-    .unwrap()
+    let (db, cf) = Self::open_cf(&read)?;
+    let from_db = db.get_pinned_cf(cf, Self::build_id(id))?;
+    Ok(from_db.map(|raw| Self::decode(&*raw)).transpose()?)
   }
 
-  fn delete(id: &Self::Id) {
+  fn put(&self) -> Result<()> {
     let read = DB.read();
-    let db = read.as_ref().expect("Pbdb database not initialized");
-    db.delete_cf(db.cf_handle(Self::CF_NAME).unwrap(), Self::build_id(id))
-      .unwrap()
+    let (db, cf) = Self::open_cf(&read)?;
+    db.put_cf(cf, Self::get_id(self), self.encode_to_vec())?;
+    Ok(())
+  }
+
+  fn delete(id: &Self::Id) -> Result<()> {
+    let read = DB.read();
+    let (db, cf) = Self::open_cf(&read)?;
+    db.delete_cf(cf, Self::build_id(id))?;
+    Ok(())
   }
 }
 
 pub trait SingleRecord: prost::Message + Default {
   const RECORD_ID: &'static str;
 
-  fn get() -> Self {
-    let read = DB.read();
-    let db = read.as_ref().expect("Pbdb database not initialized");
-    db.get_pinned_cf(db.cf_handle("__SingleRecord").unwrap(), Self::RECORD_ID)
-      .unwrap()
-      .map(|buf| Self::decode(&*buf).unwrap())
-      .unwrap_or_default()
+  fn open_cf<'a>(
+    read: &'a parking_lot::RwLockReadGuard<Option<rocksdb::DB>>,
+  ) -> Result<(&'a rocksdb::DB, &'a rocksdb::ColumnFamily)> {
+    let db = read
+      .as_ref()
+      .ok_or_else(|| Error::PbdbError("Pbdb database not initialized".to_string()))?;
+    let cf = db.cf_handle("__SingleRecord").ok_or_else(|| {
+      Error::PbdbError("(INTERNAL ERROR) Column family for single records not found".to_string())
+    })?;
+    Ok((db, cf))
   }
 
-  fn put(&self) {
+  fn get() -> Result<Self> {
     let read = DB.read();
-    let db = read.as_ref().expect("Pbdb database not initialized");
-    db.put_cf(
-      db.cf_handle("__SingleRecord").unwrap(),
-      Self::RECORD_ID,
-      self.encode_to_vec(),
+    let (db, cf) = Self::open_cf(&read)?;
+    let from_db = db.get_pinned_cf(cf, Self::RECORD_ID)?;
+    Ok(
+      from_db
+        .map(|raw| Self::decode(&*raw))
+        .transpose()?
+        .unwrap_or_default(),
     )
-    .unwrap()
+  }
+
+  fn put(&self) -> Result<()> {
+    let read = DB.read();
+    let (db, cf) = Self::open_cf(&read)?;
+    db.put_cf(cf, Self::RECORD_ID, self.encode_to_vec())?;
+    Ok(())
   }
 }
 
